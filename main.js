@@ -7,6 +7,8 @@ void main() {
 
 const fsSource = `
 uniform mediump vec2 uResolution;
+uniform mediump float uTime;
+uniform mediump float uFrequency;
 
 // 1D texture containing 16 3D gradient vectors encoded in the
 // RGB color channels.
@@ -65,7 +67,8 @@ mediump float lerp(float a, float b, float x) {
 void main() {
     mediump vec2 uv = gl_FragCoord.xy / uResolution;
 
-    mediump float z = 0.8; // Z-coordinate is fixed for 2D slice of 3D noise.
+    //mediump float z = 0.8; // Z-coordinate is fixed for 2D slice of 3D noise.
+    mediump float z = fract(uTime * uFrequency);
 
     mediump float s = 20.0; // Integer grid size.
     mediump float u = 1.0/s; // Unit size.
@@ -115,6 +118,8 @@ const PERLIN_GRADIENTS = new Int8Array([
     0,1,1,    0,-1,1,    0,1,-1,    0,-1,-1,
     1,1,0,    0,-1,1,    -1,1,0,    0,-1,-1,
 ]);
+
+var frequency = 1/16;
 
 // Given an array of indices, return an array of the 3D gradients for each
 // index. Array access wraps around.
@@ -178,7 +183,7 @@ function initBuffers(gl) {
     };
 }
 
-function drawScene(gl, programInfo, buffers) {
+function drawScene(gl, programInfo, buffers, time) {
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.clearDepth(1.0);
     gl.enable(gl.DEPTH_TEST);
@@ -253,6 +258,9 @@ function drawScene(gl, programInfo, buffers) {
     gl.uniform1i(programInfo.uniformLocations.permSampler, 0);
     gl.uniform1i(programInfo.uniformLocations.gradientSampler, 1);
 
+    gl.uniform1f(programInfo.uniformLocations.time, time);
+    gl.uniform1f(programInfo.uniformLocations.frequency, frequency); // global
+
     {
         const offset = 0;
         const vertexCount = 4;
@@ -277,6 +285,8 @@ function main() {
             vertexPosition: gl.getAttribLocation(shaderProgram, "aVertexPosition"),
         },
         uniformLocations: {
+            time: gl.getUniformLocation(shaderProgram, "uTime"),
+            frequency: gl.getUniformLocation(shaderProgram, "uFrequency"),
             resolution: gl.getUniformLocation(shaderProgram, "uResolution"),
             gradientSampler: gl.getUniformLocation(shaderProgram, "uGradientSampler"),
             permSampler: gl.getUniformLocation(shaderProgram, "uPermSampler"),
@@ -285,7 +295,29 @@ function main() {
 
     const buffers = initBuffers(gl);
 
-    drawScene(gl, programInfo, buffers);
+    document.body.appendChild(document.createElement("br"));
+
+    var xslowButton = document.createElement("button");
+    xslowButton.innerHTML = "really slow";
+    xslowButton.onclick = function(){frequency = 1/32};
+    document.body.appendChild(xslowButton);
+
+    var slowButton = document.createElement("button");
+    slowButton.innerHTML = "slow";
+    slowButton.onclick = function(){frequency = 1/16};
+    document.body.appendChild(slowButton);
+
+    var fastButton = document.createElement("button");
+    fastButton.innerHTML = "fast";
+    fastButton.onclick = function(){frequency = 1/8};
+    document.body.appendChild(fastButton);
+
+    var startTime = Date.now();
+    function render(now) {
+        drawScene(gl, programInfo, buffers, now * .001);
+        requestAnimationFrame(render);
+    }
+    requestAnimationFrame(render);
 }
 
 main();
