@@ -19,7 +19,7 @@ uniform sampler2D uGradientSampler;
 uniform sampler2D uPermSampler;
 
 // Input should be in (0, 1).
-lowp float hash(float x) {
+lowp float hash(mediump float x) {
     lowp float qx = x;
     // Just gonna let the interpolation happen here.
     // There are no mistakes, just happy accidents
@@ -27,10 +27,10 @@ lowp float hash(float x) {
     lowp vec4 sample = texture2D(uPermSampler, vec2(qx, 0.0));
     return sample.w;
 }
-lowp float hash2(vec2 v) {
+lowp float hash2(mediump vec2 v) {
     return hash(fract(hash(v.x) + v.y));
 }
-lowp float hash3(vec3 v) {
+lowp float hash3(mediump vec3 v) {
     return hash(fract(hash2(v.xy) + v.z));
 }
 
@@ -46,7 +46,7 @@ lowp vec3 grad(lowp float x) {
     return sample.xyz * 256.0 - 1.0; // rehydrating from unsigned integer values
 }
 
-lowp float g(vec3 i, vec3 p, vec3 offset, float scale) {
+lowp float g(mediump vec3 i, mediump vec3 p, mediump vec3 offset, mediump float scale) {
     lowp float h = hash3((i+offset)/scale);
     lowp vec3 g = grad(h);
     return dot(g, p - offset);
@@ -60,7 +60,7 @@ mediump vec3 lfade(mediump vec3 t) {
     return t;
 }
 
-mediump float lerp(float a, float b, float x) {
+mediump float lerp(mediump float a, mediump float b, mediump float x) {
     return mix(a, b, x);
 }
 
